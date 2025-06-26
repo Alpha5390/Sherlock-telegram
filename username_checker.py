@@ -1,16 +1,9 @@
+# username_checker.py
 import asyncio
 import aiohttp
-import json
-from datetime import datetime
 from bs4 import BeautifulSoup
-from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
-from rich.console import Console
 
-console = Console()
-
-SITES = [
-    {"name": "GitHub", "url": "https://github.com/{}"},
-    {"name": "Reddit", "url": "https://www.reddit.com/user/{}"},
+SITES = [{"name": "Reddit", "url": "https://www.reddit.com/user/{}"},
     {"name": "Telegram", "url": "https://t.me/{}"},
     {"name": "DeviantArt", "url": "https://www.deviantart.com/{}"},
     {"name": "Quora", "url": "https://www.quora.com/profile/{}"},
@@ -71,8 +64,7 @@ SITES = [
 {"name": "Bitbucket", "url": "https://bitbucket.org/{}"},
 {"name": "OpenStreetMap", "url": "https://www.openstreetmap.org/user/{}"},
 {"name": "ArchiveOrg", "url": "https://archive.org/details/@{}"},
-{"name": "CashApp", "url": "https://cash.app/{}"}
-]
+{"name": "CashApp", "url": "https://cash.app/{}"}]  # Siz yozgan 60+ ta sayt ro'yxati shu yerga to'liq kiritilsin
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
 
@@ -95,14 +87,15 @@ def ai_check_username_exists(html, username):
 
     return False
 
-async def check_site(session, username, site_data, progress):
+async def check_site(session, username, site_data, progress=None):
     url = site_data["url"].format(username)
     headers = {"User-Agent": USER_AGENT}
     try:
-        async with session.get(url, headers=headers, timeout=15, ) as response:
+        async with session.get(url, headers=headers, timeout=15) as response:
             content = await response.text()
             exists = ai_check_username_exists(content, username)
-            progress.update(progress.tasks[0].id, advance=1)
+            if progress:
+                progress.update(progress.tasks[0].id, advance=1)
             return {
                 "site": site_data["name"],
                 "url": url,
@@ -111,7 +104,8 @@ async def check_site(session, username, site_data, progress):
                 "error": None
             }
     except Exception as e:
-        progress.update(progress.tasks[0].id, advance=1)
+        if progress:
+            progress.update(progress.tasks[0].id, advance=1)
         return {
             "site": site_data["name"],
             "url": url,
@@ -120,22 +114,28 @@ async def check_site(session, username, site_data, progress):
             "error": str(e)
         }
 
-async def check_username(username):
-    console.print(f"\nFoydalanuvchi nomi: {username}")
-    console.print(f"Platformalar: {len(SITES)} ta\n")
+async def check_username(username, show_progress=True):
+    from rich.console import Console
+    from rich.progress import Progress, BarColumn, TextColumn, TimeRemainingColumn
+    console = Console()
 
     results = []
     async with aiohttp.ClientSession() as session:
-        with Progress(
-            TextColumn("{task.description}"),
-            BarColumn(),
-            TextColumn("{task.percentage:>3.0f}%"),
-            TextColumn("•"),
-            TimeRemainingColumn(),
-            console=console
-        ) as progress:
-            task = progress.add_task("Tekshirilmoqda...", total=len(SITES))
-            tasks = [check_site(session, username, site, progress) for site in SITES]
+        if show_progress:
+            with Progress(
+                TextColumn("{task.description}"),
+                BarColumn(),
+                TextColumn("{task.percentage:>3.0f}%"),
+                TextColumn("•"),
+                TimeRemainingColumn(),
+                console=console
+            ) as progress:
+                task = progress.add_task("Tekshirilmoqda...", total=len(SITES))
+                tasks = [check_site(session, username, site, progress) for site in SITES]
+                for future in asyncio.as_completed(tasks):
+                    results.append(await future)
+        else:
+            tasks = [check_site(session, username, site) for site in SITES]
             for future in asyncio.as_completed(tasks):
                 results.append(await future)
 
@@ -143,39 +143,4 @@ async def check_username(username):
     not_found = [r for r in results if not r["exists"] and r["error"] is None]
     errors = [r for r in results if r["error"]]
 
-    if found:
-        console.print("\nQuydagi saytlarda topildi:")
-        for r in found:
-            console.print(f"  • {r['site']:>12} : {r['url']}")
-
-    if not_found:
-        console.print("\nQuydagi saytlarda topilmadi:")
-        for r in not_found:
-            console.print(f"  • {r['site']:>12} : {r['url']}")
-
-    if errors:
-        console.print("\nXatoliklar:")
-        for r in errors:
-            console.print(f"  • {r['site']:>12} : {r['error']}")
-
     return results, found, not_found, errors
-
-
-
-def main():
-    console.rule("FOYDALANUVCHI NOMI TEKSHIRUV DASTURI")
-    username = console.input("\nFoydalanuvchi nomini kiriting: ").strip()
-    if not username:
-        console.print("Foydalanuvchi nomi kiritilmadi.")
-        return
-
-    loop = asyncio.get_event_loop()
-    results, found, not_found, errors = loop.run_until_complete(check_username(username))
-
-if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        console.print("\nDastur to‘xtatildi.")
-    except Exception as e:
-        console.print(f"\nXato yuz berdi: {e}")
