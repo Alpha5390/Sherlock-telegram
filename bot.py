@@ -3,8 +3,8 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from username_checker import check_username
 
-BOT_TOKEN = "BOT_TOKEN_BU_YERGA"
-ADMIN_ID = 123456789  # o'zingizning Telegram ID'ingiz
+BOT_TOKEN = "8095002687:AAEiOMd4nAulyIn0r7kFegeZr6d5WbL8QSA"
+ADMIN_ID = ['6510338337','7935854444']  # o'zingizning Telegram ID'ingiz
 
 STATS_FILE = "database.json"
 
