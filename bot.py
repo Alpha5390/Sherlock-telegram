@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from username_checker import check_username
 
-BOT_TOKEN = "8095002687:AAEiOMd4nAulyIn0r7kFegeZr6d5WbL8QSA"
+BOT_TOKEN = "8095002687:AAEiOMd4nAulyIn0r7kFegeZr6d5WbL8QSA"  # <-- TOKENingizni shu yerga yozing
 CHANNEL_USERNAME = "@V1RU5_team"
 
 POPULAR_SITES = ["Instagram", "GitHub", "Twitter", "Reddit"]
@@ -80,10 +80,21 @@ async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text("✅ Topildi:", reply_markup=InlineKeyboardMarkup(buttons))
 
+    # ✅ 2 USTUNLI Topilmadi qismi
     if not_found:
-        msg = "❌ Topilmadi:\n" + "\n".join(f"• {r['site']}" for r in not_found)
+        msg = "❌ Topilmadi:\n"
+        sites = [f"• {r['site']}" for r in not_found]
+        lines = []
+
+        for i in range(0, len(sites), 2):
+            left = sites[i]
+            right = sites[i+1] if i+1 < len(sites) else ""
+            lines.append(f"{left:<20}{right}")
+
+        msg += "\n".join(lines)
         await update.message.reply_text(msg)
 
+    # (optional) oddiy formatda xatoliklar
     if errors:
         msg = "⚠️ Xatoliklar:\n" + "\n".join(f"• {r['site']} - {r['error']}" for r in errors)
         await update.message.reply_text(msg)
@@ -98,7 +109,9 @@ async def is_subscribed(update: Update, context: ContextTypes.DEFAULT_TYPE, user
 
 async def prompt_subscription(update: Update):
     text = f"❗ Botdan foydalanish uchun {CHANNEL_USERNAME} kanaliga obuna bo‘ling."
-    button = InlineKeyboardMarkup([[InlineKeyboardButton("🔔 Obuna bo‘lish", url=f"https://t.me/{CHANNEL_USERNAME.strip('@')}")]])
+    button = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔔 Obuna bo‘lish", url=f"https://t.me/{CHANNEL_USERNAME.strip('@')}")]
+    ])
     if update.message:
         await update.message.reply_text(text, reply_markup=button)
     elif update.callback_query:
