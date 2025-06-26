@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from username_checker import check_username
 
-BOT_TOKEN = "8095002687:AAEiOMd4nAulyIn0r7kFegeZr6d5WbL8QSA"  # <-- TOKENingizni shu yerga yozing
+BOT_TOKEN = "8095002687:AAFZet6ERyK9yF6-oCoGp-vAak-Kc6mQ72o"  # <-- TOKENingizni shu yerga yozing
 CHANNEL_USERNAME = "@V1RU5_team"
 
 POPULAR_SITES = ["Instagram", "GitHub", "Twitter", "Reddit"]
