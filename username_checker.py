@@ -1,22 +1,23 @@
+# username_checker.py
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
 
 SITES = [{"name": "Reddit", "url": "https://www.reddit.com/user/{}"},
-{"name": "GitHub", "url": "https://github.com/{}"},
-{"name": "Pornhub", "url": "https://pornhub.com/{}"},
-{"name": "Telegram", "url": "https://t.me/{}"},
-{"name": "DeviantArt", "url": "https://www.deviantart.com/{}"},
-{"name": "Quora", "url": "https://www.quora.com/profile/{}"},
-{"name": "Instagram", "url": "https://www.instagram.com/{}/"},
-{"name": "Spotify", "url": "https://open.spotify.com/user/{}"},
-{"name": "Facebook", "url": "https://www.facebook.com/{}"},
-{"name": "LinkedIn", "url": "https://www.linkedin.com/in/{}"},
-{"name": "TikTok", "url": "https://www.tiktok.com/@{}"},
-{"name": "Twitch", "url": "https://www.twitch.tv/{}"},
-{"name": "Steam", "url": "https://steamcommunity.com/id/{}"},
-{"name": "Discord", "url": "https://discord.com/users/{}"},
-{"name": "Pinterest", "url": "https://www.pinterest.com/{}"},
+         {"name": "GitHub", "url": "https://github.com/{}"},
+         {"name": "Pornhub", "url": "https://pornhub.com/{}"},
+    {"name": "Telegram", "url": "https://t.me/{}"},
+    {"name": "DeviantArt", "url": "https://www.deviantart.com/{}"},
+    {"name": "Quora", "url": "https://www.quora.com/profile/{}"},
+    {"name": "Instagram", "url": "https://www.instagram.com/{}/"},
+    {"name": "Spotify", "url": "https://open.spotify.com/user/{}"},
+    {"name": "Facebook", "url": "https://www.facebook.com/{}"},
+    {"name": "LinkedIn", "url": "https://www.linkedin.com/in/{}"},
+    {"name": "TikTok", "url": "https://www.tiktok.com/@{}"},
+    {"name": "Twitch", "url": "https://www.twitch.tv/{}"},
+    {"name": "Steam", "url": "https://steamcommunity.com/id/{}"},
+    {"name": "Discord", "url": "https://discord.com/users/{}"},
+    {"name": "Pinterest", "url": "https://www.pinterest.com/{}"},
 {"name": "Tumblr", "url": "https://{}.tumblr.com"},
 {"name": "Medium", "url": "https://medium.com/@{}"},
 {"name": "Snapchat", "url": "https://www.snapchat.com/add/{}"},
@@ -65,7 +66,7 @@ SITES = [{"name": "Reddit", "url": "https://www.reddit.com/user/{}"},
 {"name": "Bitbucket", "url": "https://bitbucket.org/{}"},
 {"name": "OpenStreetMap", "url": "https://www.openstreetmap.org/user/{}"},
 {"name": "ArchiveOrg", "url": "https://archive.org/details/@{}"},
-{"name": "CashApp", "url": "https://cash.app/{}"}]
+{"name": "CashApp", "url": "https://cash.app/{}"}]  # Siz yozgan 60+ ta sayt ro'yxati shu yerga to'liq kiritilsin
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
 
@@ -83,7 +84,10 @@ def ai_check_username_exists(html, username):
         if word in text:
             return False
 
-    return username in text
+    if username in text:
+        return True
+
+    return False
 
 async def check_site(session, username, site_data, progress=None):
     url = site_data["url"].format(username)
