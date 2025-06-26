@@ -68,9 +68,8 @@ SITES = [{"name": "Reddit", "url": "https://www.reddit.com/user/{}"},
 {"name": "ArchiveOrg", "url": "https://archive.org/details/@{}"},
 {"name": "CashApp", "url": "https://cash.app/{}"}]  # Siz yozgan 60+ ta sayt ro'yxati shu yerga to'liq kiritilsin
 
-headers = {
-    
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+
 def ai_check_username_exists(html, username):
     soup = BeautifulSoup(html, "html.parser")
     text = soup.get_text(separator=' ', strip=True).lower()
