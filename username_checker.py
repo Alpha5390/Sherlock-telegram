@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 SITES = [{"name": "Reddit", "url": "https://www.reddit.com/user/{}"},
          {"name": "GitHub", "url": "https://github.com/{}"},
-         {"name": "Twitter", "url": "https://twitter.com/{}"},
+         {"name": "Pornhub", "url": "https://pornhub.com/{}"},
     {"name": "Telegram", "url": "https://t.me/{}"},
     {"name": "DeviantArt", "url": "https://www.deviantart.com/{}"},
     {"name": "Quora", "url": "https://www.quora.com/profile/{}"},
