@@ -1,112 +1,116 @@
-import asyncio, json, os
+import asyncio
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
 from username_checker import check_username
 
 BOT_TOKEN = "8095002687:AAEiOMd4nAulyIn0r7kFegeZr6d5WbL8QSA"
-ADMIN_ID = ['6510338337','7935854444']  # o'zingizning Telegram ID'ingiz
+CHANNEL_USERNAME = "@V1RU5_team"
 
-STATS_FILE = "database.json"
+POPULAR_SITES = ["Instagram", "GitHub", "Twitter", "Reddit"]
 
-def load_stats():
-    if not os.path.exists(STATS_FILE):
-        with open(STATS_FILE, "w") as f:
-            json.dump({"users": [], "total_checks": 0}, f)
-    with open(STATS_FILE, "r") as f:
-        return json.load(f)
-
-def save_stats(stats):
-    with open(STATS_FILE, "w") as f:
-        json.dump(stats, f)
-
+# 🔹 1. Boshlanish
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "👋 Salom! Username tekshiruvchi botga xush kelibsiz!\n\n"
-        "Yuboring: `username`\nNatijalar inline tugmalar orqali chiqadi.",
-        parse_mode="Markdown"
-    )
+    user_id = update.effective_user.id
 
-async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    username = update.message.text.strip()
-
-    if not username.isalnum():
-        await update.message.reply_text("⚠️ Iltimos, faqat harf va raqamdan iborat foydalanuvchi nom yuboring.")
+    if not await is_subscribed(update, context, user_id):
+        await prompt_subscription(update)
         return
 
-    # statistikaga yozish
-    stats = load_stats()
-    if update.effective_user.id not in stats["users"]:
-        stats["users"].append(update.effective_user.id)
-    stats["total_checks"] += 1
-    save_stats(stats)
-
+    keyboard = [
+        [InlineKeyboardButton("🌐 Instagram", callback_data="search_Instagram"),
+         InlineKeyboardButton("💻 GitHub", callback_data="search_GitHub")],
+        [InlineKeyboardButton("🐦 Twitter", callback_data="search_Twitter"),
+         InlineKeyboardButton("🗂 Reddit", callback_data="search_Reddit")],
+        [InlineKeyboardButton("🔎 Barchasi", callback_data="search_all")]
+    ]
     await update.message.reply_text(
-        f"🔍 `{username}` username tekshirildi.\nNatijani quyidan tanlang:",
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔝 Top 4", callback_data=f"top4|{username}")],
-            [InlineKeyboardButton("🧾 Hammasi", callback_data=f"all|{username}")],
-            [InlineKeyboardButton("🔁 Qayta tekshir", callback_data=f"check|{username}")]
-        ])
+        "🕵️‍♂️ Username qidiruvchi bot\n\n👇 Qaysi sayt(lar)da qidirishni xohlaysiz?",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# 🔹 2. Help bo‘limi
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("ℹ️ Yordam bo‘limi:\nBu yerga keyinchalik qo‘llanma yozasiz.")
+
+# 🔹 3. Inline tugma bosilganda
+async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    action, username = query.data.split("|")
+
+    if not await is_subscribed(update, context, query.from_user.id):
+        await prompt_subscription(update)
+        return
+
+    data = query.data
+    site = data.replace("search_", "")
+    context.user_data["search_target"] = site
+    await query.edit_message_text(f"📝 Username yuboring (masalan: johndoe)")
+
+# 🔹 4. Username yuborilganda
+async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    username = update.message.text.strip()
+    site = context.user_data.get("search_target")
+
+    if not await is_subscribed(update, context, update.effective_user.id):
+        await prompt_subscription(update)
+        return
+
+    if not username:
+        await update.message.reply_text("⚠️ Username yuboring.")
+        return
+
+    await update.message.reply_text(f"🔍 Tekshirilmoqda: {username}")
 
     results, found, not_found, errors = await check_username(username, show_progress=False)
 
-    if action == "top4":
-        top = found[:4]
-        if top:
-            text = "🔝 *Top 4 ta topilgan natija:*\n" + "\n".join(
-                [f"[{r['site']}]({r['url']})" for r in top]
-            )
-        else:
-            text = "❌ Hech narsa topilmadi."
-        await query.edit_message_text(text=text, parse_mode="Markdown")
+    if site != "all":
+        found = [r for r in found if r['site'] == site]
+        not_found = [r for r in not_found if r['site'] == site]
 
-    elif action == "all":
-        if found:
-            text = "🧾 *Barcha topilganlar:*\n" + "\n".join(
-                [f"[{r['site']}]({r['url']})" for r in found]
-            )
-        else:
-            text = "❌ Hech narsa topilmadi."
-        await query.edit_message_text(text=text, parse_mode="Markdown")
+    if found:
+        buttons = []
+        row = []
+        for r in found:
+            row.append(InlineKeyboardButton(r['site'], url=r['url']))
+            if len(row) == 2:
+                buttons.append(row)
+                row = []
+        if row:
+            buttons.append(row)
 
-    elif action == "check":
-        await query.edit_message_text(text="🔄 Qayta tekshirilmoqda...")
-        results, found, _, _ = await check_username(username, show_progress=False)
-        if found:
-            msg = "✅ *Topildi:*\n" + "\n".join([f"[{r['site']}]({r['url']})" for r in found])
-        else:
-            msg = "❌ *Hech narsa topilmadi.*"
-        await query.edit_message_text(text=msg, parse_mode="Markdown")
+        await update.message.reply_text("✅ Topildi:", reply_markup=InlineKeyboardMarkup(buttons))
 
-async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
-        await update.message.reply_text("🚫 Siz admin emassiz.")
-        return
+    if not_found:
+        msg = "❌ Topilmadi:\n" + "\n".join(f"• {r['site']}" for r in not_found)
+        await update.message.reply_text(msg)
 
-    stats = load_stats()
-    total = stats.get("total_checks", 0)
-    users = len(stats.get("users", []))
+    if errors:
+        msg = "⚠️ Xatoliklar:\n" + "\n".join(f"• {r['site']} - {r['error']}" for r in errors)
+        await update.message.reply_text(msg)
 
-    await update.message.reply_text(
-        f"👨‍💻 *Admin Panel*\n\n"
-        f"👤 Foydalanuvchilar: `{users}`\n"
-        f"🔍 Umumiy tekshiruvlar: `{total}`",
-        parse_mode="Markdown"
-    )
+# 🔹 5. Obuna tekshiruvi
+async def is_subscribed(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int) -> bool:
+    try:
+        member = await context.bot.get_chat_member(CHANNEL_USERNAME, user_id)
+        return member.status in ["member", "creator", "administrator"]
+    except:
+        return False
 
+async def prompt_subscription(update: Update):
+    text = f"❗ Botdan foydalanish uchun {CHANNEL_USERNAME} kanaliga obuna bo‘ling."
+    button = InlineKeyboardMarkup([[InlineKeyboardButton("🔔 Obuna bo‘lish", url=f"https://t.me/{CHANNEL_USERNAME.strip('@')}")]])
+    if update.message:
+        await update.message.reply_text(text, reply_markup=button)
+    elif update.callback_query:
+        await update.callback_query.message.reply_text(text, reply_markup=button)
+
+# 🔹 6. Botni ishga tushirish
 def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("admin", admin))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CallbackQueryHandler(handle_buttons))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_username))
-    app.add_handler(CallbackQueryHandler(handle_callback))
     app.run_polling()
 
 if __name__ == "__main__":
