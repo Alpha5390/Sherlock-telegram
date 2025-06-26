@@ -6,7 +6,7 @@ from username_checker import check_username
 BOT_TOKEN = "8095002687:AAFZet6ERyK9yF6-oCoGp-vAak-Kc6mQ72o"  # <-- TOKENingizni shu yerga yozing
 CHANNEL_USERNAME = "@V1RU5_team"
 
-POPULAR_SITES = ["Instagram", "GitHub", "Twitter", "Reddit"]
+POPULAR_SITES = ["Instagram", "GitHub", "Facebook", "Reddit"]
 
 # 🔹 1. Boshlanish
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -17,9 +17,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     keyboard = [
-        [InlineKeyboardButton("🌐 Instagram", callback_data="search_Instagram"),
+        [InlineKeyboardButton("📸 Instagram", callback_data="search_Instagram"),
          InlineKeyboardButton("💻 GitHub", callback_data="search_GitHub")],
-        [InlineKeyboardButton("🐦 Twitter", callback_data="search_Twitter"),
+        [InlineKeyboardButton("🌐 Facebook", callback_data="search_Facebook"),
          InlineKeyboardButton("🗂 Reddit", callback_data="search_Reddit")],
         [InlineKeyboardButton("🔎 Barchasi", callback_data="search_all")]
     ]
@@ -30,7 +30,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # 🔹 2. Help bo‘limi
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("ℹ️ Yordam bo‘limi:\nBu yerga keyinchalik qo‘llanma yozasiz.")
+    await update.message.reply_text("ℹ️ Yordam bo‘limi:\nAssalomu alaykum! Bu bot orqali siz istalgan foydalanuvchi nomini (username) mashhur ijtimoiy tarmoqlarda mavjud yoki mavjud emasligini aniqlashingiz mumkin.")
 
 # 🔹 3. Inline tugma bosilganda
 async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -44,7 +44,7 @@ async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     data = query.data
     site = data.replace("search_", "")
     context.user_data["search_target"] = site
-    await query.edit_message_text(f"📝 Username yuboring (masalan: johndoe)")
+    await query.edit_message_text(f"📝 Username yuboring (masalan: sherlock)")
 
 # 🔹 4. Username yuborilganda
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
